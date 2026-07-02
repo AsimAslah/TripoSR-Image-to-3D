@@ -2,10 +2,9 @@
 
 ## Overview
 
-This project is built using [TripoSR](https://github.com/VAST-AI-Research/TripoSR). It is an academic Image-to-3D Generation Application that converts a single 2D image into a 3D model through an interactive Gradio interface.
+This project is built using [TripoSR](https://github.com/VAST-AI-Research/TripoSR). It is an Image-to-3D Generation Application that converts a single 2D image into a 3D model through an interactive Gradio interface.
 
-The application preprocesses the uploaded image, optionally removes its background, runs inference with the pretrained TripoSR model, extracts a 3D mesh, displays an interactive preview, and provides OBJ and GLB files for download.
-
+The application preprocesses the uploaded image, optionally removes its background, runs inference using the pretrained TripoSR model, extracts a 3D mesh, displays an interactive preview, and allows users to download the generated model in OBJ and GLB formats.
 ## My Contribution
 
 My work in this repository is the implementation and customization of the application workflow around TripoSR. This includes:
