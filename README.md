@@ -130,8 +130,13 @@ The first launch downloads the TripoSR configuration and pretrained weights from
 ```text
 Image-to-3D/
 |-- app.py                       # Gradio application and Image-to-3D workflow
+|-- assets/
+|   `-- screenshots/             # Verified application result screenshots
 |-- examples/
 |   `-- chair.png                # Sample input image
+|-- sample_outputs/
+|   |-- chair.obj                # Generated chair mesh in OBJ format
+|   `-- chair.glb                # Generated chair model in GLB format
 |-- tsr/                         # Required TripoSR inference source
 |   |-- models/                  # Tokenizers, transformer, renderer, and mesh extraction
 |   |-- system.py                # Model loading, inference, and mesh generation
@@ -153,12 +158,29 @@ The application produces:
 - A downloadable OBJ model
 - A downloadable GLB model
 
-Generated model files are temporary runtime outputs and are excluded from version control.
+### Chair Example
+
+The following screenshots show the same chair image after preprocessing and generation at a marching-cubes resolution of 256.
+
+**OBJ result**
+
+![Chair generated in OBJ format](assets/screenshots/chair-obj-result.png)
+
+**GLB result**
+
+![Chair generated in GLB format](assets/screenshots/chair-glb-result.png)
+
+Download the verified sample outputs:
+
+- [Chair OBJ model](sample_outputs/chair.obj)
+- [Chair GLB model](sample_outputs/chair.glb)
+
+The two sample files above are retained as portfolio evidence. Other generated model files remain excluded from version control.
 
 ## Future Improvements
 
 - Add automated tests for preprocessing and mesh export
-- Add verified screenshots and generated-model examples
+- Add more verified examples for different object categories
 - Add clearer model-download and hardware error messages
 - Add generation progress feedback
 - Add a reproducible container configuration

@@ -176,6 +176,10 @@ checkpoints/
 *.ply
 *.stl
 
+# Curated portfolio outputs retained for demonstration
+!sample_outputs/chair.obj
+!sample_outputs/chair.glb
+
 # Local Gradio/runtime scratch files
 flagged/
 tmp/
