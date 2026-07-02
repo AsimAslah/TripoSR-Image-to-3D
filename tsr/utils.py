@@ -108,7 +108,10 @@ class ImagePreprocessor:
         else:
             if not isinstance(image, list):
                 image = [image]
-            image = [self.convert_and_resize(im, size) for im in image]
+            image = [
+                self.convert_and_resize(source_image, size)
+                for source_image in image
+            ]
             image = torch.stack(image, dim=0)
         return image
 
