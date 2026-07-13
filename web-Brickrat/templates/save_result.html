@@ -1,11 +1,11 @@
 {% if error %}
   <div class="notice notice-error" role="alert">{{ error }}</div>
 {% elif undone %}
-  <div class="notice" role="status">Save undone. {% if restored %}The previous product data was restored.{% else %}The product was removed from Supabase.{% endif %}</div>
+  <div class="notice notice-info" role="status">Save undone. {% if restored %}The previous product data was restored.{% else %}The product was removed from Supabase.{% endif %}</div>
 {% else %}
   <div class="notice notice-success" role="status">
     <span>
-      “{{ product.name }}” was saved successfully to <strong>{{ table_name }}</strong>.<br>
+      "{{ product.name }}" was saved to <strong>{{ table_name }}</strong> successfully.<br>
       {% if image_reused %}Image already uploaded. Using existing image.{% else %}New image uploaded successfully.{% endif %}
     </span>
     <button class="undo" type="button" hx-delete="/products/{{ conversion_id }}" hx-target="#save-result" hx-swap="innerHTML">Undo</button>

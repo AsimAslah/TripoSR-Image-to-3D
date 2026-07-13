@@ -44,19 +44,28 @@ class FakeQuery:
 class FakeStorage:
     def __init__(self, existing_names=None):
         self.uploads = []
+        self.upload_options = []
+        self.removed = []
         self.existing_names = existing_names or []
+        self.fail_after = None
 
     def from_(self, _bucket):
         return self
 
-    def upload(self, path, *_args, **_kwargs):
+    def upload(self, path, *args, **kwargs):
+        if self.fail_after is not None and len(self.uploads) >= self.fail_after:
+            raise RuntimeError("simulated upload failure")
         self.uploads.append(path)
+        self.upload_options.append(args[-1] if args and isinstance(args[-1], dict) else kwargs)
 
     def list(self, *_args, **_kwargs):
         return [{"name": name} for name in self.existing_names]
 
     def get_public_url(self, path):
         return f"https://assets.test/{path}"
+
+    def remove(self, paths):
+        self.removed.extend(paths)
 
 
 class FakeClient:
@@ -107,6 +116,8 @@ class SupabaseStoreTests(unittest.TestCase):
         self.assertEqual(client.write[0:2], ("insert", "chairs"))
         self.assertEqual(len(client.storage.uploads), 3)
         self.assertTrue(client.storage.uploads[0].startswith("images/"))
+        self.assertEqual(client.storage.upload_options[1]["content-type"], "text/plain")
+        self.assertEqual(client.storage.upload_options[2]["content-type"], "model/gltf-binary")
         self.assertEqual(outcome.product["id"], "row-1")
 
     def test_existing_image_url_is_reused_without_image_upload(self):
@@ -138,6 +149,15 @@ class SupabaseStoreTests(unittest.TestCase):
         self.assertEqual(
             outcome.product["image_url"], f"https://assets.test/images/{digest}.png",
         )
+
+    def test_failed_upload_cleans_assets_and_does_not_write_row(self):
+        client = FakeClient()
+        client.storage.fail_after = 1
+        with self.assertRaises(RuntimeError):
+            self.save(client)
+
+        self.assertIsNone(client.write)
+        self.assertEqual(client.storage.removed, client.storage.uploads)
 
 
 if __name__ == "__main__":

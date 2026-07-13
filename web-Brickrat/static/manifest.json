@@ -1,10 +1,33 @@
 {
-  "name": "TripoSR Product Studio",
-  "short_name": "Product Studio",
-  "description": "Create furniture OBJ and GLB models with AR-ready GLB previews.",
+  "id": "/",
+  "name": "Furniture 3D AR Studio",
+  "short_name": "Furniture AR",
+  "description": "Convert furniture photos into portable 3D and mobile AR assets.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#11100e",
-  "theme_color": "#11100e",
-  "icons": []
+  "orientation": "any",
+  "background_color": "#f6f3ed",
+  "theme_color": "#f6f3ed",
+  "categories": ["design", "shopping", "utilities"],
+  "icons": [
+    {
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
 }

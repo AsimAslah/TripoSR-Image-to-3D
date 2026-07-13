@@ -1,55 +1,129 @@
 {% if error %}
-  <p class="error">{{ error }}</p>
+  <div class="notice notice-error" role="alert">
+    <span>{{ error }}</span>
+    {% if error_code %}<code>{{ error_code }}</code>{% endif %}
+  </div>
 {% else %}
   <input type="hidden" name="conversion_id" value="{{ conversion_id }}" form="product-form">
-  <div class="image-preview-grid">
-    <div class="source-preview"><h3>Source image</h3><img src="{{ image_url }}" alt="Uploaded product"></div>
-    <div class="source-preview"><h3>Processed model input</h3><img src="{{ processed_url }}" alt="Background-removed model input"></div>
-  </div>
-  <div class="model-preview-grid">
-    <article class="model-card">
-      <h3>OBJ preview</h3>
-      {% if obj_url %}
-      <div class="obj-preview" data-obj-url="{{ obj_url }}" aria-label="OBJ model preview">
-        <span>Loading OBJ preview...</span>
+
+  <div class="result-dashboard" data-preview-root data-conversion-id="{{ conversion_id }}">
+    <section class="result-summary" aria-labelledby="conversion-success-title">
+      <div class="success-mark" aria-hidden="true">&#10003;</div>
+      <div class="summary-copy">
+        <span class="eyebrow">Conversion complete</span>
+        <h3 id="conversion-success-title">Your furniture model is ready</h3>
+        <p>Choose a preview only when you need it. No 3D file has been downloaded by this page yet.</p>
       </div>
-      <a href="{{ obj_url }}" download>Download OBJ</a>
-      {% else %}
-      <p class="error">OBJ file not available for preview.</p>
-      {% endif %}
-    </article>
-    <article class="model-card ar-preview-section">
-      <h3>AR Preview</h3>
+      <img class="summary-image" src="{{ processed_url }}" alt="Converted furniture product">
+    </section>
+
+    <section class="file-summary" aria-label="Generated model files">
+      <div class="file-status {{ 'is-ready' if glb_file else 'is-unavailable' }}">
+        <span>GLB</span><strong>{{ glb_file.display if glb_file else 'Unavailable' }}</strong>
+        <small>{{ 'Validated, embedded assets' if glb_file else 'Validation failed' }}</small>
+      </div>
+      <div class="file-status {{ 'is-ready' if obj_file else 'is-unavailable' }}">
+        <span>OBJ</span><strong>{{ obj_file.display if obj_file else 'Unavailable' }}</strong>
+        <small>{{ 'Ready' if obj_file else 'Not generated' }}</small>
+      </div>
+      <div class="file-status {{ 'is-ready' if usdz_file else 'is-unavailable' }}">
+        <span>USDZ</span><strong>{{ usdz_file.display if usdz_file else 'Unavailable' }}</strong>
+        <small>{{ 'Validated for Apple Quick Look' if usdz_file else 'iPhone AR not generated' }}</small>
+      </div>
+    </section>
+
+    <section class="primary-actions" aria-label="Model actions">
       {% if glb_url %}
-      <model-viewer
-        class="ar-model-viewer"
-        src="{{ glb_url }}"
-        {% if usdz_url %}ios-src="{{ usdz_url }}"{% endif %}
-        alt="Generated furniture 3D model"
-        ar
-        ar-modes="webxr scene-viewer quick-look"
-        camera-controls
-        auto-rotate
-        shadow-intensity="1"
-        exposure="1.1"
-        field-of-view="35deg">
-        <div slot="poster" class="model-loading">Loading GLB preview...</div>
-        <button slot="ar-button" class="ar-button" type="button">View in AR</button>
-      </model-viewer>
-      <p class="model-error" hidden>GLB model failed to load. Try downloading the GLB or converting again.</p>
+      <button class="button primary preview-trigger" type="button" data-preview-type="glb"
+              data-preview-url="{{ glb_url }}" data-download-url="{{ glb_download_url }}"
+              data-file-size="{{ glb_file.bytes }}">Load GLB Preview</button>
+      {% endif %}
+      {% if obj_url %}
+      <button class="button outline preview-trigger" type="button" data-preview-type="obj"
+              data-preview-url="{{ obj_url }}" data-download-url="{{ obj_download_url }}"
+              data-file-size="{{ obj_file.bytes }}">Load OBJ Preview</button>
+      {% endif %}
+      <button class="button secondary" type="submit" form="product-form" {% if not glb_url %}disabled{% endif %}>Save to Supabase</button>
+    </section>
+
+    <section class="ar-card" aria-labelledby="ar-heading"
+             data-glb-url="{{ glb_url or '' }}" data-usdz-ready="{{ 'true' if usdz_url else 'false' }}">
+      <div>
+        <h3 id="ar-heading">View in your room</h3>
+        <p class="ar-status" role="status" aria-live="polite">Checking AR support on this device...</p>
+      </div>
       {% if usdz_url %}
-      <p class="ar-note">iPhone AR is available through Apple Quick Look.</p>
-      <a href="{{ usdz_url }}" download>Download USDZ</a>
-      {% else %}
-      <p class="ar-note">iPhone AR requires a USDZ file. GLB AR works mainly on Android devices.</p>
+      <a class="button primary ios-ar-action" rel="ar" href="{{ usdz_url }}" hidden>
+        <img src="{{ processed_url }}" alt="" aria-hidden="true">
+        <span>View in AR on iPhone</span>
+      </a>
       {% endif %}
-      <p class="ar-note">AR works best on supported mobile devices with HTTPS.</p>
-      <a href="{{ glb_url }}" download>Download GLB</a>
-      {% else %}
-      <p class="error">GLB file not available for AR preview.</p>
+      {% if glb_url %}
+      <button class="button primary android-ar-action" type="button" data-model-url="{{ glb_url }}" hidden>View in AR on Android</button>
       {% endif %}
-    </article>
+      <span class="ar-unavailable" hidden>AR unavailable on this device</span>
+    </section>
+
+    <section class="download-card" aria-labelledby="downloads-heading">
+      <h3 id="downloads-heading">Download model files</h3>
+      <div class="button-row">
+        {% if glb_download_url %}<a class="button outline" href="{{ glb_download_url }}">Download GLB <span>{{ glb_file.display }}</span></a>{% endif %}
+        {% if obj_download_url %}<a class="button outline" href="{{ obj_download_url }}">Download OBJ <span>{{ obj_file.display }}</span></a>{% endif %}
+        {% if usdz_download_url %}<a class="button outline" href="{{ usdz_download_url }}">Download USDZ <span>{{ usdz_file.display }}</span></a>{% endif %}
+      </div>
+    </section>
+
+    <section class="preview-card" data-preview-card hidden aria-labelledby="active-preview-heading">
+      <div class="preview-heading">
+        <div>
+          <span class="eyebrow">On-demand preview</span>
+          <h3 id="active-preview-heading" data-preview-heading>3D Preview</h3>
+        </div>
+        <button class="button outline unload-preview" type="button">Close preview</button>
+      </div>
+      <div class="preview-status" data-preview-status role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        <span data-preview-message>Preparing preview...</span>
+      </div>
+      <div class="preview-progress" data-preview-progress hidden>
+        <progress max="100" aria-label="Model download progress"></progress>
+      </div>
+      <div class="preview-surface" data-preview-surface hidden aria-label="Interactive 3D model preview"></div>
+      <div class="preview-error" data-preview-error hidden role="alert">
+        <p data-preview-error-message>Preview could not be loaded.</p>
+        <div class="button-row">
+          <button class="button primary retry-preview" type="button">Retry preview</button>
+          <a class="button outline preview-error-download" href="#">Download model</a>
+        </div>
+      </div>
+      <details class="preview-diagnostics">
+        <summary>View technical details</summary>
+        <dl data-preview-diagnostics>
+          <div><dt>File type</dt><dd data-diagnostic-type>Not loaded</dd></div>
+          <div><dt>File size</dt><dd data-diagnostic-size>Not loaded</dd></div>
+          <div><dt>Stage</dt><dd data-diagnostic-stage>Idle</dd></div>
+          <div><dt>HTTP status</dt><dd data-diagnostic-http>Not requested</dd></div>
+          <div><dt>Details</dt><dd data-diagnostic-detail>None</dd></div>
+        </dl>
+      </details>
+    </section>
+
+    <details class="conversion-details">
+      <summary>Conversion and material details</summary>
+      <div class="image-preview-grid">
+        <figure><img src="{{ image_url }}" alt="Original uploaded product"><figcaption>Original upload</figcaption></figure>
+        <figure><img src="{{ processed_url }}" alt="Processed TripoSR input"><figcaption>TripoSR input</figcaption></figure>
+      </div>
+      {% if original_texture_preserved %}
+      <p class="notice notice-info">The source UV texture was preserved and embedded in the GLB.</p>
+      {% elif vertex_colors_preserved %}
+      <p class="notice notice-info">Generated vertex colours were baked into an embedded texture atlas for portable rendering.</p>
+      {% elif fallback_material_applied %}
+      <p class="notice notice-info">A fallback material derived from the uploaded object colour was used.</p>
+      {% endif %}
+      {% if usdz_error %}<p class="notice notice-info">iPhone AR file is not available for this model. See the server log for USDZ export diagnostics.</p>{% endif %}
+      {% if material_error %}<p class="notice notice-error">Material processing reported a failure. See the server log for diagnostics.</p>{% endif %}
+    </details>
   </div>
-  <p class="success">Both 3D formats are ready.</p>
-  <script>document.getElementById('save-button').disabled = false;</script>
+  <script>document.getElementById('save-button').disabled = {{ 'false' if glb_url else 'true' }};</script>
 {% endif %}
