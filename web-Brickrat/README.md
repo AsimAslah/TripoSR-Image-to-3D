@@ -85,9 +85,10 @@ ngrok page does not embed localhost or mixed-content model URLs.
 
 `manifest.json` includes 192 px, 512 px, and maskable icons. The PWA uses a
 standalone display, root start URL/scope, a registered service worker, hashed
-asset query versions, network-first frontend updates, old-cache deletion, and
-network-only generated/model routes. The service worker does not intercept Apple
-Quick Look and cannot substitute a cached GLB, OBJ, or USDZ.
+asset and cache versions, cache-first stable static assets, network-first HTML
+navigation with a dedicated offline fallback, old-cache deletion, and network-only
+generated/model routes. The service worker checks for updates after page load and
+does not intercept Apple Quick Look or substitute a cached GLB, OBJ, or USDZ.
 
 ## Diagnostics and tests
 

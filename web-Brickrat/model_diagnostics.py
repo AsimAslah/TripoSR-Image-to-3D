@@ -16,6 +16,9 @@ USD_SUFFIXES = {".usd", ".usda", ".usdc"}
 
 
 def _read_glb_json(path: Path) -> dict:
+    def reject_non_finite(value: str) -> None:
+        raise ValueError(f"GLB JSON contains the non-finite value {value}.")
+
     with path.open("rb") as stream:
         header = stream.read(12)
         if len(header) != 12:
@@ -35,7 +38,10 @@ def _read_glb_json(path: Path) -> dict:
             if len(chunk) != chunk_length:
                 raise ValueError("GLB chunk is incomplete.")
             if chunk_type == GLB_JSON_CHUNK:
-                return json.loads(chunk.rstrip(b"\x00 \t\r\n").decode("utf-8"))
+                return json.loads(
+                    chunk.rstrip(b"\x00 \t\r\n").decode("utf-8"),
+                    parse_constant=reject_non_finite,
+                )
     raise ValueError("GLB has no JSON chunk.")
 
 

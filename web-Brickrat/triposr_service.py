@@ -121,9 +121,47 @@ class TripoSRService:
         colour atlas with one padded tile per dense triangle preserves the
         available TripoSR colour signal using ordinary UV/PBR materials.
         """
-        face_count = len(mesh.faces)
-        if face_count == 0:
+        source_vertices = np.asarray(mesh.vertices, dtype=np.float64)
+        source_faces = np.asarray(mesh.faces, dtype=np.int64)
+        if len(source_faces) == 0:
             raise ValueError("The generated mesh has no faces.")
+        if not np.isfinite(source_vertices).all():
+            raise ValueError("The generated mesh contains non-finite vertices.")
+        if (
+            source_faces.ndim != 2
+            or source_faces.shape[1] != 3
+            or source_faces.min() < 0
+            or source_faces.max() >= len(source_vertices)
+        ):
+            raise ValueError("The generated mesh contains invalid triangle indices.")
+
+        triangles = source_vertices[source_faces]
+        face_cross = np.cross(
+            triangles[:, 1] - triangles[:, 0],
+            triangles[:, 2] - triangles[:, 0],
+        )
+        face_cross_lengths = np.linalg.norm(face_cross, axis=1)
+        mesh_scale = float(np.ptp(source_vertices, axis=0).max())
+        minimum_cross_length = max(
+            mesh_scale * mesh_scale * 1e-12,
+            np.finfo(np.float64).tiny,
+        )
+        usable_faces = (
+            np.isfinite(face_cross).all(axis=1)
+            & np.isfinite(face_cross_lengths)
+            & (face_cross_lengths > minimum_cross_length)
+        )
+        removed_face_count = int((~usable_faces).sum())
+        if not usable_faces.any():
+            raise ValueError("The generated mesh contains no non-degenerate faces.")
+        if removed_face_count:
+            LOGGER.warning(
+                "Removed %s degenerate faces before portable GLB export.",
+                removed_face_count,
+            )
+        source_faces = source_faces[usable_faces]
+        face_normals = face_cross[usable_faces] / face_cross_lengths[usable_faces, None]
+        face_count = len(source_faces)
 
         grid = math.ceil(math.sqrt(face_count))
         tile_size = max(1, min(4, MAX_ATLAS_SIZE // grid))
@@ -134,7 +172,7 @@ class TripoSRService:
         if grid > atlas_size:
             raise ValueError("Mesh has too many faces for the texture atlas.")
 
-        face_colors = np.rint(colors[mesh.faces].astype(np.float32).mean(axis=1))
+        face_colors = np.rint(colors[source_faces].astype(np.float32).mean(axis=1))
         face_colors = np.clip(face_colors, 0, 255).astype(np.uint8)
         atlas_base = np.median(face_colors.astype(np.float32), axis=0)
         atlas_base = np.clip(np.rint(atlas_base), 0, 255).astype(np.uint8)
@@ -149,10 +187,10 @@ class TripoSRService:
             v = 1.0 - ((y0 + tile_size / 2.0) / atlas_size)
             uvs[index * 3:(index + 1) * 3] = (u, v)
 
-        vertices = mesh.vertices[mesh.faces].reshape((-1, 3))
+        vertices = source_vertices[source_faces].reshape((-1, 3))
         faces = np.arange(face_count * 3, dtype=np.int64).reshape((-1, 3))
         baked = trimesh.Trimesh(vertices=vertices, faces=faces, process=False)
-        baked.fix_normals()
+        baked.vertex_normals = np.repeat(face_normals, 3, axis=0)
         texture = Image.fromarray(atlas, "RGBA")
         baked.visual = TextureVisuals(
             uv=uvs,

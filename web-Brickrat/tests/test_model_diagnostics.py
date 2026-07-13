@@ -91,6 +91,25 @@ class ModelDiagnosticsTests(unittest.TestCase):
         self.assertFalse(report["valid"])
         self.assertEqual(report["external_buffer_uris"], ["local-model.bin"])
 
+    def test_glb_with_non_finite_accessor_metadata_is_invalid(self):
+        path = self.root / "non-finite.glb"
+        write_glb(path, {
+            "asset": {"version": "2.0"},
+            "accessors": [{"count": 3, "min": [float("nan")]}],
+            "bufferViews": [{}],
+            "images": [{"bufferView": 0, "mimeType": "image/png"}],
+            "textures": [{"source": 0}],
+            "materials": [{"pbrMetallicRoughness": {"baseColorTexture": {"index": 0}}}],
+            "meshes": [{"primitives": [{
+                "attributes": {"POSITION": 0, "TEXCOORD_0": 0}, "material": 0,
+            }]}],
+        })
+
+        report = inspect_glb(path)
+
+        self.assertFalse(report["valid"])
+        self.assertIn("non-finite value NaN", report["error"])
+
     def test_usdz_requires_scene_and_texture(self):
         valid = self.root / "valid.usdz"
         write_usdz(valid, {"scene.usdc": b"usd", "textures/baseColor.png": b"png"})

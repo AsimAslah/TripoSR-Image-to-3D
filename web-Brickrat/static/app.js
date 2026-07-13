@@ -524,13 +524,45 @@
     activePreviews.forEach((_value, root) => unloadPreview(root));
   });
 
+  window.addEventListener("offline", () => {
+    notify("You are offline. Conversion, saving, and AR assets require a connection.", "info");
+  });
+  window.addEventListener("online", () => {
+    notify("Connection restored.", "success");
+  });
+  if (!navigator.onLine) {
+    notify("You are offline. Conversion, saving, and AR assets require a connection.", "info");
+  }
+
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register(`/service-worker.js?v=${window.APP_VERSION || "current"}`, {
-        scope: "/", updateViaCache: "none",
-      }).then((registration) => registration.update()).catch((error) => {
+    window.addEventListener("load", async () => {
+      try {
+        const registration = await navigator.serviceWorker.register("/service-worker.js", {
+          scope: "/",
+          updateViaCache: "none",
+        });
+        const observeWorker = (worker) => {
+          if (!worker) return;
+          worker.addEventListener("statechange", () => {
+            if (worker.state === "installed" && navigator.serviceWorker.controller) {
+              console.info("[Furniture AR] app update installed");
+              notify("An app update is ready. Refresh after finishing your current work.", "info");
+            }
+          });
+        };
+        observeWorker(registration.installing);
+        registration.addEventListener("updatefound", () => observeWorker(registration.installing));
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          console.info("[Furniture AR] service worker controller updated");
+        });
+        registration.update().catch((error) => {
+          console.warn("[Furniture AR] service worker update check failed", error);
+        });
+      } catch (error) {
         console.warn("[Furniture AR] service worker registration failed", error);
-      });
+      }
     });
+  } else {
+    console.info("[Furniture AR] service workers are not supported in this browser");
   }
 })();

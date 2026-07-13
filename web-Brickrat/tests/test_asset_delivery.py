@@ -61,6 +61,24 @@ class AssetDeliveryTests(unittest.TestCase):
         self.assertEqual(response.headers["content-type"], "model/vnd.usdz+zip")
         self.assertTrue(response.headers["content-disposition"].startswith("inline"))
 
+    def test_pwa_manifest_worker_and_offline_fallback_are_served(self):
+        manifest = self.client.get("/manifest.webmanifest")
+        self.assertEqual(manifest.status_code, 200)
+        self.assertTrue(manifest.headers["content-type"].startswith("application/manifest+json"))
+        self.assertEqual(manifest.json()["display"], "standalone")
+
+        worker = self.client.get("/service-worker.js")
+        self.assertEqual(worker.status_code, 200)
+        self.assertTrue(worker.headers["content-type"].startswith("application/javascript"))
+        self.assertIn(main.ASSET_VERSION, worker.text)
+        self.assertNotIn("__ASSET_VERSION__", worker.text)
+        self.assertEqual(worker.headers["service-worker-allowed"], "/")
+        self.assertIn("no-cache", worker.headers["cache-control"])
+
+        offline = self.client.get("/static/offline.html")
+        self.assertEqual(offline.status_code, 200)
+        self.assertIn("offline-shell", offline.text)
+
     def test_missing_and_unsafe_assets_are_rejected(self):
         conversion_id = uuid4()
         self.assertEqual(

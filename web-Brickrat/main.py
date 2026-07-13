@@ -11,7 +11,7 @@ from urllib.parse import urljoin
 from uuid import UUID, uuid4
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
@@ -35,10 +35,10 @@ mimetypes.add_type("text/plain", ".mtl")
 
 def _asset_version() -> str:
     digest = hashlib.sha256()
-    for name in ("app.js", "styles.css", "service-worker.js", "manifest.json", "obj-preview.js"):
-        path = BASE_DIR / "static" / name
-        if path.is_file():
-            digest.update(path.read_bytes())
+    static_dir = BASE_DIR / "static"
+    for path in sorted(item for item in static_dir.rglob("*") if item.is_file()):
+        digest.update(path.relative_to(static_dir).as_posix().encode("utf-8"))
+        digest.update(path.read_bytes())
     return digest.hexdigest()[:12]
 
 
@@ -145,10 +145,14 @@ def index(request: Request):
 
 @app.get("/service-worker.js", include_in_schema=False)
 def service_worker():
-    return FileResponse(
-        BASE_DIR / "static" / "service-worker.js",
+    source = (BASE_DIR / "static" / "service-worker.js").read_text(encoding="utf-8")
+    return Response(
+        source.replace("__ASSET_VERSION__", ASSET_VERSION),
         media_type="application/javascript",
-        headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Service-Worker-Allowed": "/",
+        },
     )
 
 

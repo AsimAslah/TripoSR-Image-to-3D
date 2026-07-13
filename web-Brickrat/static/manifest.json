@@ -3,6 +3,8 @@
   "name": "Furniture 3D AR Studio",
   "short_name": "Furniture AR",
   "description": "Convert furniture photos into portable 3D and mobile AR assets.",
+  "lang": "en",
+  "dir": "ltr",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -11,6 +13,12 @@
   "theme_color": "#f6f3ed",
   "categories": ["design", "shopping", "utilities"],
   "icons": [
+    {
+      "src": "/static/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "/static/icons/icon-192.png",
       "sizes": "192x192",

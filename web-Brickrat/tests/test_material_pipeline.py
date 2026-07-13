@@ -48,6 +48,26 @@ class MaterialPipelineTests(unittest.TestCase):
             self.assertTrue((root / "model.mtl").is_file())
             self.assertTrue(any(Path(item["filename"]).suffix == ".png" for item in resources))
 
+    def test_degenerate_face_is_removed_before_glb_export(self):
+        colors = np.array([
+            [220, 35, 35, 255], [35, 210, 60, 255],
+            [35, 60, 220, 255], [230, 190, 35, 255],
+        ], dtype=np.uint8)
+        mesh = tetrahedron(colors)
+        mesh.faces = np.vstack((mesh.faces, [0, 0, 1]))
+
+        prepared, _ = triposr._prepare_portable_material(
+            mesh, Image.new("RGBA", (16, 16), "white"),
+        )
+
+        self.assertEqual(len(prepared.faces), 4)
+        self.assertTrue(np.isfinite(prepared.vertex_normals).all())
+        with tempfile.TemporaryDirectory() as temp:
+            glb = Path(temp) / "model.glb"
+            prepared.export(glb, file_type="glb")
+            inspection = inspect_glb(glb)
+        self.assertTrue(inspection["valid"], inspection.get("error"))
+
     def test_existing_uv_texture_is_preserved(self):
         mesh = tetrahedron()
         mesh.visual = TextureVisuals(
